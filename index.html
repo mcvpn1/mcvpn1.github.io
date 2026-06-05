@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kalender Digital</title>
+	<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
+<style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --red: #e74c3c;
+            --bg: #eef2f3;
+            --card-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 5px;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            max-width: 340px; 
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* --- JAM DIGITAL --- */
+        .clock-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .clock-time {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 2px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .clock-second {
+            font-size: 1rem;
+            color: var(--accent);
+            margin-left: 4px;
+        }
+
+        .clock-date {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- IKLAN BANNER --- */
+        .ad-banner {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .ad-placeholder {
+            border: 1px dashed #ccc;
+            color: #999;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            border-radius: 6px;
+            background: #f9f9f9;
+        }
+
+        /* --- KALENDER --- */
+        .calendar-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- HEADER DIPERBAIKI (PRESISI) --- */
+        .cal-header {
+            background: white;
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            z-index: 10;
+            position: relative;
+        }
+
+        .month-label { 
+            /* FIX PRESISI: */
+            flex: 1; /* Memaksa wadah mengisi ruang kosong di tengah secara penuh */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Memaksa teks benar-benar di tengah horizontal */
+            justify-content: center;
+            text-align: center;
+        }
+
+        .month-label h2 { 
+            font-size: 1rem; 
+            color: var(--primary); 
+            margin: 0; 
+            font-weight: 700;
+            line-height: 1.1; 
+        }
+        
+        .month-label span { 
+            font-size: 0.65rem; 
+            color: #7f8c8d; 
+            display: inline-block; /* Ubah ke inline-block agar nurut align-items */
+            margin-top: 1px;
+            font-weight: 600;
+            letter-spacing: 1.5px; /* Spasi antar huruf */
+            text-transform: uppercase;
+            padding-left: 1.5px; /* FIX OPTIK: Menyeimbangkan letter-spacing agar terlihat pas di tengah */
+        }
+
+        .btn-nav {
+            background: #f8f9fa;
+            border: none;
+            color: var(--primary);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            flex-shrink: 0; /* Mencegah tombol gepeng */
+        }
+        /* ---------------------------------- */
+
+        .status-bar {
+            font-size: 0.6rem;
+            text-align: center;
+            padding: 2px;
+            background: #fcf3cf;
+            color: #7f6000;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            padding: 8px 8px 4px;
+            font-weight: bold;
+            color: #aaa;
+            font-size: 0.65rem;
+        }
+        
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            padding: 0 8px 8px;
+            gap: 2px;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .day:hover:not(.empty) { background: #f0f2f5; }
+        .day.today { background: var(--primary); color: white; font-weight: bold; }
+        .day.sunday { color: var(--red); font-weight: bold; }
+        .day.holiday { background-color: #fceceb; color: var(--red); font-weight: bold; }
+        .empty { pointer-events: none; }
+
+        .slide-out-left { transform: translateX(-30px); opacity: 0; }
+        .slide-in-right { transform: translateX(30px); opacity: 0; }
+        .slide-out-right { transform: translateX(30px); opacity: 0; }
+        .slide-in-left { transform: translateX(-30px); opacity: 0; }
+        .active-slide { transform: translateX(0); opacity: 1; }
+
+        .holiday-section {
+            padding: 10px;
+            background: #fafafa;
+            border-top: 1px solid #eee;
+        }
+
+        .holiday-title {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .holiday-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.7rem;
+            color: #444;
+            line-height: 1.2;
+        }
+
+        .date-badge {
+            background: var(--red);
+            color: white;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 0.6rem;
+            margin-right: 6px;
+            font-weight: bold;
+            min-width: 35px;
+            text-align: center;
+        }
+
+        .source-text {
+            display: block;
+            text-align: right; 
+            font-size: 0.6rem;
+            color: #999;
+            font-style: italic;
+            margin-top: 8px;
+            border-top: 1px dashed #e0e0e0;
+            padding-top: 4px;
+        }
+
+        .copyright {
+            text-align: center;
+            font-size: 0.6rem;
+            color: #bbb;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        
+        <div class="clock-card">
+            <div class="clock-time" id="digital-clock">00:00<span class="clock-second">00</span></div>
+            <div class="clock-date" id="digital-date">...</div>
+        </div>
+
+        <div class="calendar-card" id="calendar-card">
+            <div class="cal-header">
+                <button class="btn-nav" id="prev">&#10094;</button>
+                <div class="month-label">
+                    <h2 id="month-year">...</h2>
+                    <span id="subtitle-nav">INDONESIA</span>
+                </div>
+                <button class="btn-nav" id="next">&#10095;</button>
+            </div>
+
+            <div id="status-bar" class="status-bar">Sync Google...</div>
+
+            <div class="weekdays">
+                <div style="color: var(--red);">MIN</div>
+                <div>SEN</div>
+                <div>SEL</div>
+                <div>RAB</div>
+                <div>KAM</div>
+                <div>JUM</div>
+                <div>SAB</div>
+            </div>
+
+            <div class="days" id="days-grid"></div>
+
+            <div class="holiday-section">
+                <div class="holiday-title">Agenda :</div>
+                
+                <div id="holiday-container"></div>
+                
+                <span class="source-text">*Sumber: Google</span>
+            </div>
+        </div>
+
+        <div class="copyright">
+            &copy; 2025 Created with ❤️ by McNafian
+        </div>
+
+    </div>
+
+<script>
+    // 1. JAM DIGITAL
+    function updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('digital-clock').innerHTML = `${h}:${m}<span class="clock-second">${s}</span>`;
+        
+        const opts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        document.getElementById('digital-date').innerText = now.toLocaleDateString('id-ID', opts);
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 2. KALENDER AUTO UPDATE & LOGIC
+    const googleICSUrl = "https://calendar.google.com/calendar/ical/id.indonesian%23holiday%40group.v.calendar.google.com/public/basic.ics";
+    const proxies = ["https://corsproxy.io/?", "https://api.allorigins.win/raw?url="];
+
+    let currentDate = new Date();
+    let currYear = currentDate.getFullYear();
+    let currMonth = currentDate.getMonth();
+    let holidaysData = []; 
+    let isDataLoaded = false;
+    let isAnimating = false; // Flag untuk mencegah spam klik/swipe
+
+    // Elements
+    const monthYearEl = document.getElementById("month-year");
+    const daysGrid = document.getElementById("days-grid");
+    const holidayContainer = document.getElementById("holiday-container");
+    const statusBar = document.getElementById("status-bar");
+    const calendarCard = document.getElementById("calendar-card");
+    const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+    async function fetchGoogleData() {
+        statusBar.innerText = "⏳ Mengambil data...";
+        statusBar.style.background = "#fcf3cf";
+
+        for (let proxy of proxies) {
+            let targetUrl = proxy.includes("corsproxy") ? proxy + googleICSUrl : proxy + encodeURIComponent(googleICSUrl);
+            try {
+                const res = await fetch(targetUrl);
+                if (!res.ok) throw new Error("Gagal");
+                const txt = await res.text();
+                if(!txt.includes("BEGIN:VCALENDAR")) throw new Error("Data Invalid");
+
+                holidaysData = parseICS(txt);
+                isDataLoaded = true;
+
+                statusBar.innerText = "✔ Terupdate";
+                statusBar.style.background = "#d4efdf"; 
+                statusBar.style.color = "#145a32";
+                renderCalendar();
+                return;
+            } catch (e) { console.warn("Skip proxy"); }
+        }
+        statusBar.innerText = "✖ Koneksi Gagal";
+        statusBar.style.background = "#fadbd8";
+        statusBar.style.color = "#7b241c";
+    }
+
+    function parseICS(ics) {
+        const events = [];
+        const lines = ics.split(/\r\n|\n|\r/);
+        let inEvent = false, eDate = "", eName = "";
+        lines.forEach(line => {
+            if (line.startsWith('BEGIN:VEVENT')) { inEvent = true; eDate = ""; eName = ""; }
+            else if (line.startsWith('END:VEVENT')) {
+                inEvent = false;
+                if (eDate && eName) {
+                    events.push({ date: `${eDate.substring(0,4)}-${eDate.substring(4,6)}-${eDate.substring(6,8)}`, summary: eName });
+                }
+            } else if (inEvent) {
+                if (line.startsWith('DTSTART;VALUE=DATE:')) eDate = line.split(':')[1];
+                else if (line.startsWith('SUMMARY:')) eName = line.substring(8);
+            }
+        });
+        return events;
+    }
+
+    function renderCalendar() {
+        monthYearEl.innerText = `${months[currMonth]} ${currYear}`;
+
+        const firstDay = new Date(currYear, currMonth, 1).getDay();
+        const lastDate = new Date(currYear, currMonth + 1, 0).getDate();
+
+        daysGrid.innerHTML = "";
+        for(let i=0; i<firstDay; i++) daysGrid.innerHTML += `<div class="day empty"></div>`;
+
+        let monthEvents = [];
+        for(let i=1; i<=lastDate; i++) {
+            const div = document.createElement("div");
+            div.className = "day";
+            div.innerText = i;
+            const dStr = `${currYear}-${String(currMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+
+            if(new Date(currYear, currMonth, i).getDay() === 0) div.classList.add("sunday");
+            const today = new Date();
+            if(i === today.getDate() && currMonth === today.getMonth() && currYear === today.getFullYear()) div.classList.add("today");
+
+            if (isDataLoaded) {
+                const h = holidaysData.find(x => x.date === dStr);
+                if(h) {
+                    div.classList.add("holiday");
+                    monthEvents.push(h);
+                }
+            }
+            daysGrid.appendChild(div);
+        }
+        renderList(monthEvents);
+    }
+
+    function renderList(list) {
+        holidayContainer.innerHTML = "";
+        if (!isDataLoaded) { holidayContainer.innerHTML = "<small>Loading...</small>"; return; }
+        if (list.length === 0) { holidayContainer.innerHTML = "<small style='color:#ccc'>Tidak ada libur</small>"; return; }
+        
+        list.sort((a,b) => a.date.localeCompare(b.date));
+        list.forEach(h => {
+            const d = new Date(h.date);
+            const pretty = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            holidayContainer.innerHTML += `
+                <div class="holiday-item">
+                    <span class="date-badge">${pretty}</span>
+                    <span>${h.summary}</span>
+                </div>
+            `;
+        });
+    }
+
+    // --- 3. FITUR ANIMASI & SWIPE (BARU) ---
+
+    // Fungsi Wrapper untuk ganti bulan dengan animasi
+    function changeMonthWithAnim(direction) {
+        if (isAnimating) return;
+        isAnimating = true;
+
+        // Tentukan kelas animasi keluar
+        const exitClass = direction === 'next' ? 'slide-out-left' : 'slide-out-right';
+        const enterClass = direction === 'next' ? 'slide-in-right' : 'slide-in-left';
+
+        // 1. Animasi Keluar
+        daysGrid.classList.add(exitClass);
+
+        setTimeout(() => {
+            // 2. Update Logic Bulan
+            if(direction === 'next') {
+                currMonth++;
+                if(currMonth > 11) { currMonth = 0; currYear++; }
+            } else {
+                currMonth--;
+                if(currMonth < 0) { currMonth = 11; currYear--; }
+            }
+
+            // 3. Render Bulan Baru (dalam keadaan invisible karena belum ada kelas enter)
+            renderCalendar();
+
+            // Reset kelas keluar, tambahkan kelas masuk
+            daysGrid.classList.remove(exitClass);
+            daysGrid.classList.add(enterClass);
+
+            // 4. Hapus kelas masuk setelah animasi selesai agar bersih
+            setTimeout(() => {
+                daysGrid.classList.remove(enterClass);
+                isAnimating = false;
+            }, 300); // Waktu sama dengan transition CSS (0.3s)
+
+        }, 300); // Waktu tunggu animasi keluar selesai
+    }
+
+    // Event Listener Tombol (Diupdate menggunakan fungsi animasi)
+    document.getElementById("prev").onclick = () => changeMonthWithAnim('prev');
+    document.getElementById("next").onclick = () => changeMonthWithAnim('next');
+
+    // --- LOGIC SWIPE (TOUCH SCREEN) ---
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    calendarCard.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, {passive: true});
+
+    calendarCard.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, {passive: true});
+
+    function handleSwipe() {
+        const threshold = 50; // Jarak minimal swipe agar dianggap geser
+        const swipeDistance = touchStartX - touchEndX;
+
+        if (Math.abs(swipeDistance) > threshold) {
+            if (swipeDistance > 0) {
+                // Swipe ke Kiri (Jari bergerak dari kanan ke kiri) -> Next Month
+                changeMonthWithAnim('next');
+            } else {
+                // Swipe ke Kanan (Jari bergerak dari kiri ke kanan) -> Prev Month
+                changeMonthWithAnim('prev');
+            }
+        }
+    }
+
+    renderCalendar();
+    fetchGoogleData();
+
+</script>
+
+
+</body>
+</html>
